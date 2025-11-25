@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veggie Adventure</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Tone.js untuk audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    
+    <style>
+        /* Font kustom yang ceria (Google Font) */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            -moz-user-select: none;
+        }
+
+        ::-webkit-scrollbar { display: none; }
+
+        /* --- Animasi --- */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes bounce-soft { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.1); } }
+        @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+        .animate-shake { animation: shake 0.5s ease-in-out; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-bounce-soft { animation: bounce-soft 1s ease-in-out infinite; }
+        .animate-pop-in { animation: pop-in 0.5s ease-out forwards; }
+
+        .emoji-char { font-size: 4rem; line-height: 1; }
+        .emoji-button { font-size: 2rem; line-height: 1; }
+        .text-shadow-soft { text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3); }
+        .garden-bg {
+            background-color: #a7f3d0;
+            background-image: radial-gradient(circle at 10% 15%, #fde047 10px, transparent 11px), radial-gradient(circle at 80% 20%, #f472b6 10px, transparent 11px), radial-gradient(circle at 50% 80%, #fde047 10px, transparent 11px), radial-gradient(circle at 25% 90%, #f472b6 10px, transparent 11px);
+        }
+        .wood-bg { background-color: #a16207; }
+        .shelf-bg { background-color: #78350f; }
+        .draggable-tool { cursor: grab; transition: transform 0.2s ease; }
+        .dragging { position: absolute; z-index: 50; transform: scale(1.2); box-shadow: 0 10px 15px rgba(0,0,0,0.2); cursor: grabbing; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-gray-200 flex items-center justify-center min-h-screen">
+
+    <!-- Kontainer Utama Game -->
+    <div id="game-container" class="w-full max-w-md h-screen max-h-[1024px] bg-white shadow-2xl overflow-hidden relative">
+
+        <!-- ===== Tampilan 1: Pembuka (Intro) ===== -->
+        <div id="screen-intro" class="w-full h-full p-4 flex flex-col items-center justify-center bg-sky-400 text-white relative overflow-hidden">
+            <!-- Animasi Latar -->
+            <div class="absolute top-10 left-10 text-6xl animate-float" style="animation-delay: 0s;">☁️</div>
+            <div class="absolute top-20 right-10 text-6xl animate-float" style="animation-delay: 1.5s;">☁️</div>
+            <div class="absolute top-40 left-20 text-3xl animate-float" style="animation-delay: 1s;">🦋</div>
+            <div class="absolute top-60 right-20 text-3xl animate-float" style="animation-delay: 2.5s;">🦋</div>
+            <div class="absolute bottom-32 left-10 emoji-char animate-bounce-soft opacity-80" style="animation-delay: 0s;">🥕</div>
+            <div class="absolute bottom-24 right-12 emoji-char animate-bounce-soft opacity-80" style="animation-delay: 0.5s;">🍅</div>
+
+            <!-- Konten Utama Intro -->
+            <div class="z-10 text-center animate-pop-in flex flex-col items-center h-full justify-center w-full overflow-y-auto no-scrollbar pt-10">
+                <div class="mb-2 mt-4">
+                    <h1 class="text-4xl font-bold text-shadow-soft mb-1">Veggie Adventure</h1>
+                    <p class="text-xs mb-2 px-4">Halo teman kecil! Selamat datang di petualangan seru di kebun sayur ajaib!</p>
+                </div>
+                
+                <button id="btn-start" class="px-8 py-2 bg-yellow-500 hover:bg-yellow-600 rounded-full text-xl font-bold shadow-lg transform transition-transform hover:scale-105 active:scale-95 mb-4">
+                    Mulai
+                </button>
+
+                <!-- === UPDATE: Kotak Profil Mahasiswa === -->
+                <div class="bg-white/20 p-3 rounded-xl backdrop-blur-md w-full shadow-lg border border-white/30 mb-4">
+                    <p class="font-bold text-xs mb-2 text-yellow-100 text-center">Mahasiswa PG PAUD UNSRI Semester 5</p>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- 1. Adela -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/1.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Adela Nurul Fadhilah</p>
+                        </div>
+
+                        <!-- 2. Dwi -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/6.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Dwi Yuliana</p>
+                        </div>
+
+                        <!-- 3. Dia -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/2.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Dia Natasya</p>
+                        </div>
+
+                        <!-- 4. Maharani -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/4.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Maharani</p>
+                        </div>
+
+                        <!-- 5. Mega -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/3.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Mega Ariska</p>
+                        </div>
+
+                        <!-- 6. Renata -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/5.jpeg" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Renata Putri Aulia</p>
+                        </div>
+
+                        <!-- 7. Zahrotun -->
+                        <div class="flex flex-col items-center p-1 bg-white/30 rounded-lg col-start-2"> <!-- col-start-2 untuk tengah di baris terakhir -->
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mb-1 border-2 border-white overflow-hidden flex items-center justify-center text-gray-500 text-[8px]">
+                                <img src="gambar/7.png" alt="">
+                            </div>
+                            <p class="text-[8px] font-bold text-center leading-tight">Zahrotun nur</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- === AKHIR UPDATE === -->
+            </div>
+
+            <button id="btn-settings" class="absolute top-4 right-4 text-4xl p-2 transition-transform hover:rotate-45 active:scale-90">
+                ⚙️
+            </button>
+        </div>
+
+        <!-- ===== Tampilan 2: Menu Utama ===== -->
+        <div id="screen-menu" class="w-full h-full p-6 flex flex-col items-center justify-center garden-bg relative overflow-hidden hidden">
+            <div class="absolute top-10 left-10 text-4xl animate-float">🦋</div>
+            <div class="absolute top-20 right-10 text-4xl animate-float" style="animation-delay: 1s;">🦋</div>
+            <h1 class="text-4xl font-bold text-gray-800 mb-8 text-center">Petualangan Sayur Dimulai!</h1>
+            <div class="relative mb-8 text-center">
+                <div class="text-8xl">🐰</div>
+                <div class="absolute -bottom-4 w-full flex justify-center">
+                    <p class="bg-white px-4 py-2 rounded-full shadow-md text-gray-700">Pilih petualanganmu hari ini, yuk!</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                <button id="btn-menu-learn" class="p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95">
+                    <span class="emoji-button mb-2">🌿</span><span class="font-semibold text-lg">Belajar Sayur</span>
+                </button>
+                <button id="btn-menu-quiz" class="p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95">
+                    <span class="emoji-button mb-2">❓</span><span class="font-semibold text-lg">Bermain Quiz</span>
+                </button>
+                <button id="btn-menu-kitchen" class="p-4 bg-purple-500 hover:bg-purple-600 text-white rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95">
+                    <span class="emoji-button mb-2">🍳</span><span class="font-semibold text-lg">Dapur Ajaib</span>
+                </button>
+                <button id="btn-menu-collection" class="p-4 bg-pink-500 hover:bg-pink-600 text-white rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95">
+                    <span class="emoji-button mb-2">🧺</span><span class="font-semibold text-lg">Koleksi Sayurku</span>
+                </button>
+            </div>
+            <button id="btn-exit-app" class="mt-8 px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-full font-semibold shadow transition-transform hover:scale-105 active:scale-95">Keluar</button>
+        </div>
+
+        <!-- ===== Tampilan 3a: Pilih Sayur ===== -->
+        <div id="screen-learn-select" class="w-full h-full p-6 flex flex-col items-center justify-center bg-green-200 hidden">
+            <h1 class="text-3xl font-bold text-green-800 mb-8 text-center">Pilih sayur yang ingin kamu tanam!</h1>
+            <div class="grid grid-cols-3 gap-4 w-full max-w-sm">
+                <button class="btn-select-veg p-4 bg-white hover:bg-yellow-100 rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95" data-veg-emoji="🥕" data-veg-name="Wortel">
+                    <span class="text-7xl">🥕</span><span class="font-semibold text-lg text-gray-700 mt-2">Wortel</span>
+                </button>
+                <button class="btn-select-veg p-4 bg-white hover:bg-red-100 rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95" data-veg-emoji="🍅" data-veg-name="Tomat">
+                    <span class="text-7xl">🍅</span><span class="font-semibold text-lg text-gray-700 mt-2">Tomat</span>
+                </button>
+                <button class="btn-select-veg p-4 bg-white hover:bg-green-100 rounded-2xl shadow-lg flex flex-col items-center transition-transform hover:scale-105 active:scale-95" data-veg-emoji="🥦" data-veg-name="Brokoli">
+                    <span class="text-7xl">🥦</span><span class="font-semibold text-lg text-gray-700 mt-2">Brokoli</span>
+                </button>
+            </div>
+            <button class="btn-back-to-menu w-full max-w-sm mt-12 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali</button>
+        </div>
+
+        <!-- ===== Tampilan 3b: Belajar Sayur (Menanam) ===== -->
+        <div id="screen-learn" class="w-full h-full p-6 flex flex-col items-center justify-between bg-yellow-100 hidden">
+            <h1 class="text-3xl font-bold text-yellow-800 mt-8 text-center">Ayo Menanam!</h1>
+            <div class="flex-grow flex flex-col items-center justify-center w-full">
+                <div id="plant-pot" class="bg-yellow-700 w-48 h-32 rounded-t-xl relative flex items-center justify-center border-b-8 border-yellow-800">
+                    <div id="plant-display" class="text-8xl absolute -bottom-4 transition-all duration-500">🌱</div>
+                </div>
+                <div class="bg-yellow-600 w-56 h-4 rounded-b-lg"></div>
+                <p id="plant-status-text" class="mt-4 text-lg text-yellow-900 font-semibold h-12 text-center"></p>
+            </div>
+            <div id="tools-menu" class="w-full max-w-sm bg-white/50 backdrop-blur-sm p-4 rounded-2xl shadow-lg flex justify-around mb-4">
+                <div id="tool-water" data-tool="water" class="draggable-tool p-4 bg-blue-500 rounded-full shadow-md text-4xl">💧</div>
+                <div id="tool-fertilizer" data-tool="fertilizer" class="draggable-tool p-4 bg-green-600 rounded-full shadow-md text-4xl">✨</div>
+                <div id="tool-sun" data-tool="sun" class="draggable-tool p-4 bg-yellow-400 rounded-full shadow-md text-4xl">☀️</div>
+            </div>
+            <div class="flex justify-between w-full max-w-sm mb-4">
+                <button class="btn-back-to-menu px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali</button>
+                <button id="btn-plant-again" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Tanam Lagi</button>
+            </div>
+        </div>
+
+        <!-- ===== Tampilan 4: Kuis Sayuran ===== -->
+        <div id="screen-quiz" class="w-full h-full p-6 flex flex-col items-center justify-between wood-bg text-white hidden">
+            <div class="w-full text-center mt-8">
+                <h1 class="text-4xl font-bold mb-4">Kuis Sayur!</h1>
+                <p class="text-xl">Skor: <span id="quiz-score">0</span></p>
+            </div>
+            <div id="quiz-area" class="flex-grow flex flex-col items-center justify-center w-full max-w-sm">
+                <p id="quiz-question" class="text-2xl font-semibold text-center mb-8 bg-white/20 p-4 rounded-lg">Memuat pertanyaan...</p>
+                <div id="quiz-options" class="grid grid-cols-2 gap-4 w-full"></div>
+                <div id="quiz-feedback" class="mt-6 text-2xl font-bold h-8 text-center"></div>
+            </div>
+            <div id="quiz-results" class="flex-grow flex-col items-center justify-center w-full max-w-sm hidden">
+                <h2 class="text-3xl font-bold text-center">Kuis Selesai!</h2>
+                <p class="text-5xl my-8">🎉</p>
+                <p class="text-2xl text-center">Skor Akhir Kamu:</p>
+                <p id="quiz-final-score" class="text-6xl font-bold my-4">0 / 0</p>
+                <button id="btn-quiz-retry" class="w-full mt-4 px-6 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xl font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Coba Lagi</button>
+            </div>
+            <button class="btn-back-to-menu w-full max-w-sm mb-4 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali ke Kebun</button>
+        </div>
+
+        <!-- ===== Tampilan 5: Dapur Ajaib ===== -->
+        <div id="screen-kitchen" class="w-full h-full p-6 flex flex-col items-center bg-orange-200 hidden overflow-y-auto">
+            <h1 class="text-4xl font-bold text-orange-800 mt-8 mb-4 text-center">Dapur Ajaib!</h1>
+            <p class="text-lg text-orange-900 text-center mb-8">Yuk, lihat bagaimana sayur bisa diolah jadi makanan enak dan penuh warna!</p>
+            <div id="kitchen-list" class="w-full max-w-sm space-y-4"></div>
+            <button class="btn-back-to-menu w-full max-w-sm my-8 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali ke Kebun</button>
+        </div>
+
+        <!-- ===== Tampilan 6: Koleksi Sayurku ===== -->
+        <div id="screen-collection" class="w-full h-full p-6 flex flex-col items-center shelf-bg text-white hidden overflow-y-auto">
+            <h1 class="text-4xl font-bold mt-8 mb-6 text-center">Koleksi Sayurku</h1>
+            <div id="collection-grid" class="w-full max-w-sm grid grid-cols-2 gap-4"></div>
+            <button class="btn-back-to-menu w-full max-w-sm my-8 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali ke Kebun</button>
+        </div>
+
+        <!-- ===== Tampilan 7: Penutup ===== -->
+        <div id="screen-outro" class="w-full h-full p-6 flex flex-col items-center justify-center bg-pink-300 text-pink-900 relative hidden">
+            <div class="text-8xl mb-4 animate-bounce-soft">🐰</div>
+            <div class="flex gap-4 mb-8"><span class="emoji-char">🥕</span><span class="emoji-char">🍅</span><span class="emoji-char">🥦</span><span class="emoji-char">🥬</span></div>
+            <h1 class="text-3xl font-bold text-center mb-4">Terima Kasih Sudah Belajar!</h1>
+            <p class="text-lg text-center mb-8">Ayo makan sayur biar tumbuh sehat dan kuat!</p>
+            <div class="flex flex-col gap-4 w-full max-w-xs">
+                <button id="btn-play-again" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full text-xl font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Main Lagi!</button>
+                <button id="btn-exit-to-intro" class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-full text-xl font-semibold shadow-lg transition-transform hover:scale-105 active:scale-95">Kembali ke Awal</button>
+            </div>
+        </div>
+
+    </div> <!-- Akhir dari #game-container -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // === Pengaturan Audio ===
+            let isMusicStarted = false;
+            let indonesianVoice = null; 
+
+            const clickSoundSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.01, release: 0.05 } }).toDestination();
+            const successSoundSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination();
+            const failSoundSynth = new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.01, release: 0.1 } }).toDestination();
+            const winSoundSynth = new Tone.Synth().toDestination();
+            const quizSuccessSoundSynth = new Tone.Synth({ oscillator: { type: 'triangle8' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+            quizSuccessSoundSynth.volume.value = -5; 
+
+            function playClickSound() { if (isMusicStarted) clickSoundSynth.triggerAttackRelease('C5', '8n'); }
+            function playSuccessSound() { if (isMusicStarted) successSoundSynth.triggerAttackRelease('E5', '8n'); }
+            function playFailSound() { if (isMusicStarted) failSoundSynth.triggerAttackRelease('C3', '8n'); }
+            function playWinSound() {
+                if (!isMusicStarted) return;
+                const now = Tone.now();
+                winSoundSynth.triggerAttackRelease('C5', '8n', now);
+                winSoundSynth.triggerAttackRelease('E5', '8n', now + 0.1);
+                winSoundSynth.triggerAttackRelease('G5', '8n', now + 0.2);
+            }
+            function playQuizSuccessSound() { if (isMusicStarted) quizSuccessSoundSynth.triggerAttackRelease('C6', '0.5s'); }
+
+            const musicSynth = new Tone.FMSynth({ harmonicity: 1.2, modulationIndex: 5, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.5 }, modulationEnvelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2 } }).toDestination();
+            musicSynth.volume.value = -15; 
+            const melody = ['C4', 'C4', 'G4', 'G4', 'A4', 'A4', 'G4', null, 'F4', 'F4', 'E4', 'E4', 'D4', 'D4', 'C4', null];
+            const musicLoop = new Tone.Sequence((time, note) => { if (note) musicSynth.triggerAttackRelease(note, '4n', time); }, melody, '4n');
+            musicLoop.loop = true;
+            musicLoop.playbackRate = 0.8;
+
+            function loadVoices() {
+                if (!('speechSynthesis' in window)) return;
+                let voices = window.speechSynthesis.getVoices();
+                indonesianVoice = voices.find(voice => voice.lang === 'id-ID') || voices.find(voice => voice.lang.startsWith('id'));
+            }
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.onvoiceschanged = loadVoices;
+                loadVoices();
+            }
+            function speakText(text) {
+                if (!('speechSynthesis' in window) || !isMusicStarted) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID';
+                if (indonesianVoice) utterance.voice = indonesianVoice;
+                utterance.pitch = 1.1; 
+                utterance.rate = 0.9; 
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // === Data Game ===
+            const vegetables = [
+                { emoji: '🥕', name: 'Wortel', color: 'Oranye', fact: 'Aku bagus untuk matamu!' },
+                { emoji: '🍅', name: 'Tomat', color: 'Merah', fact: 'Aku membuat kulitmu sehat!' },
+                { emoji: '🥦', name: 'Brokoli', color: 'Hijau', fact: 'Aku seperti pohon kecil yang kuat!' },
+                { emoji: '🥬', name: 'Bayam', color: 'Hijau', fact: 'Aku bikin kamu kuat seperti Popeye!' },
+                { emoji: '🥒', name: 'Timun', color: 'Hijau', fact: 'Aku panjang dan bikin segar!' },
+                { emoji: '🌽', name: 'Jagung', color: 'Kuning', fact: 'Aku manis dan enak dibakar!' },
+                { emoji: '🍆', name: 'Terong', color: 'Ungu', fact: 'Aku punya warna ungu yang cantik!' },
+                { emoji: '🌶️', name: 'Cabai', color: 'Merah', fact: 'Aku pedas, tapi bikin semangat!' }
+            ];
+            const quizQuestions = [
+                { q: "Sayur apa yang berwarna orange?", options: ['🥕', '🍅', '🥦', '🥬'], correct: '🥕' },
+                { q: "Sayur mana yang tumbuh di bawah tanah?", options: ['🍅', '🌽', '🥒', '🥕'], correct: '🥕' },
+                { q: "Apa sayur berwarna merah?", options: ['🥬', '🍆', '🍅', '🌽'], correct: '🍅' },
+                { q: "Sayur yang panjang dan berwarna hijau itu sayur apa?", options: ['🥦', '🥒', '🍆', '🥕'], correct: '🥒' },
+                { q: "Sayur apa yang terlihat seperti pohon kecil?", options: ['🥦', '🥬', '🌽', '🌶️'], correct: '🥦' }
+            ];
+            const kitchenVideos = [
+                { emoji: '🍲', title: 'Daun Ubi Tumbuk', desc: 'Daun ubi bisa ditumbuk dan dimasak jadi lauk yang lezat, lho!', link: 'https://youtu.be/aiNhKc30scE?si=FOWBW7w-fshoLYlh', color: 'bg-green-600' },
+                { emoji: '🫙', title: 'Acar Timun Wortel', desc: 'Acar timun dan wortel segar membuat makanan terasa lebih nikmat!', link: 'https://youtu.be/2lPXBJCvLw8?si=mtv7NehtNuDrbw2l', color: 'bg-yellow-500' },
+                { emoji: '🍜', title: 'Mi Celor', desc: 'Mi celor khas Palembang! Enak, gurih, dan penuh sayur.', link: 'https://youtu.be/k--7w2-MBjg?si=h_ucyRtyMykLAtQk', color: 'bg-yellow-700' },
+                { emoji: '🍧', title: 'Rujak Mi', desc: 'Rujak mi rasanya manis, asam, pedas, dan segar!', link: 'https://youtu.be/-eHLk9R5IaI?si=wyCOQNrwAHWN9fLK', color: 'bg-pink-500' }
+            ];
+
+            // === Variabel Status Game ===
+            let currentScreen = 'screen-intro';
+            let currentQuestionIndex = 0;
+            let quizScore = 0;
+            let selectedVegetable = null;
+            let plantState = 0;
+            let draggedItem = null;
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            // === Elemen DOM ===
+            const gameContainer = document.getElementById('game-container');
+            const screens = document.querySelectorAll('#game-container > div');
+            const plantDisplay = document.getElementById('plant-display');
+            const plantStatusText = document.getElementById('plant-status-text');
+            const plantPot = document.getElementById('plant-pot'); 
+            const quizArea = document.getElementById('quiz-area');
+            const quizResults = document.getElementById('quiz-results');
+            const quizQuestionEl = document.getElementById('quiz-question');
+            const quizOptionsEl = document.getElementById('quiz-options');
+            const quizFeedbackEl = document.getElementById('quiz-feedback');
+            const quizScoreEl = document.getElementById('quiz-score');
+            const quizFinalScoreEl = document.getElementById('quiz-final-score');
+            const collectionGrid = document.getElementById('collection-grid');
+            const kitchenList = document.getElementById('kitchen-list');
+
+            // === Fungsi Utama ===
+            function showScreen(screenId) {
+                screens.forEach(screen => {
+                    if (screen.id === screenId) {
+                        screen.classList.remove('hidden');
+                        screen.classList.add('animate-pop-in');
+                    } else {
+                        screen.classList.add('hidden');
+                        screen.classList.remove('animate-pop-in');
+                    }
+                });
+                currentScreen = screenId;
+                if (screenId === 'screen-kitchen') loadKitchen();
+                if (screenId === 'screen-collection') loadCollection();
+                if (screenId === 'screen-quiz') startQuiz();
+            }
+
+            function resetPlant() {
+                plantState = 0;
+                if (!selectedVegetable) selectedVegetable = { emoji: '🥕', name: 'Wortel' };
+                plantDisplay.textContent = '🌱';
+                plantDisplay.classList.remove('text-9xl'); plantDisplay.classList.add('text-8xl');
+                plantStatusText.textContent = `Tanam ${selectedVegetable.name}! Aku butuh air 💧.`;
+                plantDisplay.classList.remove('animate-shake');
+            }
+            function applyTool(toolType) {
+                plantDisplay.classList.remove('animate-shake');
+                if (plantState === 0 && toolType === 'water') {
+                    plantState = 1; plantDisplay.textContent = '🌿';
+                    plantStatusText.textContent = 'Hebat! Sekarang aku butuh pupuk ✨.'; playSuccessSound();
+                } else if (plantState === 1 && toolType === 'fertilizer') {
+                    plantState = 2; plantDisplay.textContent = '🌳';
+                    plantStatusText.textContent = 'Aku tumbuh! Aku butuh matahari ☀️.'; playSuccessSound();
+                } else if (plantState === 2 && toolType === 'sun') {
+                    plantState = 3; plantDisplay.textContent = selectedVegetable.emoji;
+                    plantDisplay.classList.add('text-9xl');
+                    plantStatusText.textContent = `Yey! Kamu menanam ${selectedVegetable.name}!`; playWinSound();
+                } else if (plantState === 3) {
+                    plantStatusText.textContent = `Kamu sudah panen ${selectedVegetable.name}!`; plantDisplay.classList.add('animate-shake');
+                } else {
+                    playFailSound(); plantDisplay.classList.add('animate-shake');
+                    if (plantState === 0) plantStatusText.textContent = 'Bukan! Aku butuh air 💧.';
+                    else if (plantState === 1) plantStatusText.textContent = 'Bukan! Aku butuh pupuk ✨.';
+                    else if (plantState === 2) plantStatusText.textContent = 'Bukan! Aku butuh matahari ☀️.';
+                    setTimeout(() => plantDisplay.classList.remove('animate-shake'), 500);
+                }
+            }
+            
+            // Drag and Drop
+            function getEventPosition(e) {
+                if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                return { x: e.clientX, y: e.clientY };
+            }
+            function dragStart(e) {
+                draggedItem = this.cloneNode(true); draggedItem.classList.add('dragging'); 
+                const pos = getEventPosition(e); const rect = this.getBoundingClientRect();
+                offsetX = pos.x - rect.left; offsetY = pos.y - rect.top;
+                draggedItem.style.left = `${pos.x - offsetX}px`; draggedItem.style.top = `${pos.y - offsetY}px`;
+                document.body.appendChild(draggedItem); isDragging = true; e.preventDefault();
+            }
+            function dragMove(e) {
+                if (!isDragging || !draggedItem) return;
+                const pos = getEventPosition(e);
+                draggedItem.style.left = `${pos.x - offsetX}px`; draggedItem.style.top = `${pos.y - offsetY}px`;
+                e.preventDefault();
+            }
+            function dragEnd(e) {
+                if (!isDragging || !draggedItem) return;
+                isDragging = false;
+                const targetRect = plantPot.getBoundingClientRect(); const draggedRect = draggedItem.getBoundingClientRect();
+                const isCollision = !(draggedRect.right < targetRect.left || draggedRect.left > targetRect.right || draggedRect.bottom < targetRect.top || draggedRect.top > targetRect.bottom);
+                if (isCollision) applyTool(draggedItem.dataset.tool);
+                document.body.removeChild(draggedItem); draggedItem = null;
+            }
+            const draggableTools = document.querySelectorAll('.draggable-tool');
+            draggableTools.forEach(tool => {
+                tool.addEventListener('mousedown', dragStart); tool.addEventListener('touchstart', dragStart, { passive: false });
+            });
+            document.addEventListener('mousemove', dragMove); document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', dragEnd); document.addEventListener('touchend', dragEnd);
+
+            // Kitchen
+            function loadKitchen() {
+                kitchenList.innerHTML = '';
+                kitchenVideos.forEach(video => {
+                    const card = document.createElement('div');
+                    card.className = `p-4 ${video.color} text-white rounded-2xl shadow-lg`;
+                    const textToSpeak = `${video.title}. ${video.desc}`;
+                    card.innerHTML = `
+                        <div class="flex items-center space-x-4">
+                            <span class="text-4xl">${video.emoji}</span>
+                            <div><h3 class="font-bold text-xl">${video.title}</h3><p class="text-sm">${video.desc}</p></div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-3">
+                            <button class="btn-speak-kitchen p-2 w-12 h-12 bg-blue-500 rounded-full text-white text-2xl shadow flex items-center justify-center transition-transform hover:scale-110 active:scale-95">🔊</button>
+                            <a href="${video.link}" target="_blank" class="px-4 py-2 bg-white/30 hover:bg-white/50 text-white font-semibold rounded-full shadow flex items-center justify-center transition-transform hover:scale-105 active:scale-95">Tonton</a>
+                        </div>
+                    `;
+                    card.querySelector('.btn-speak-kitchen').addEventListener('click', (e) => { e.stopPropagation(); playClickSound(); speakText(textToSpeak); });
+                    kitchenList.appendChild(card);
+                });
+            }
+
+            // Collection
+            function loadCollection() {
+                collectionGrid.innerHTML = '';
+                vegetables.forEach(veg => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white/10 p-4 rounded-2xl flex flex-col items-center text-center shadow-lg';
+                    const textToSpeak = `${veg.name}. ${veg.fact}`;
+                    card.innerHTML = `
+                        <div class="text-6xl mb-2">${veg.emoji}</div>
+                        <h3 class="text-xl font-bold">${veg.name}</h3>
+                        <p class="text-xs bg-white/20 px-2 py-1 rounded-full mb-3">${veg.fact}</p>
+                        <button class="btn-speak-veg p-2 w-12 h-12 bg-blue-500 rounded-full text-white text-2xl shadow flex items-center justify-center transition-transform hover:scale-110 active:scale-95">🔊</button>
+                    `;
+                    card.querySelector('.btn-speak-veg').addEventListener('click', (e) => { e.stopPropagation(); playClickSound(); speakText(textToSpeak); });
+                    collectionGrid.appendChild(card);
+                });
+            }
+
+            // Quiz
+            function startQuiz() {
+                currentQuestionIndex = 0; quizScore = 0; quizScoreEl.textContent = '0';
+                quizArea.classList.remove('hidden'); quizArea.classList.add('flex');
+                quizResults.classList.add('hidden'); quizResults.classList.remove('flex');
+                loadQuestion();
+            }
+            function loadQuestion() {
+                if (currentQuestionIndex >= quizQuestions.length) { showQuizResults(); return; }
+                const q = quizQuestions[currentQuestionIndex];
+                quizQuestionEl.textContent = q.q;
+                speakText(q.q);
+                quizOptionsEl.innerHTML = ''; quizFeedbackEl.textContent = '';
+                q.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.className = 'p-4 bg-white/20 hover:bg-white/40 text-white rounded-2xl shadow-lg text-5xl transition-transform hover:scale-105 active:scale-95';
+                    button.textContent = option;
+                    button.onclick = () => checkAnswer(option, q.correct);
+                    quizOptionsEl.appendChild(button);
+                });
+            }
+            function checkAnswer(selected, correct) {
+                if (isMusicStarted && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+                quizOptionsEl.querySelectorAll('button').forEach(btn => btn.disabled = true);
+                if (selected === correct) {
+                    quizScore++; quizScoreEl.textContent = quizScore;
+                    quizFeedbackEl.textContent = 'Benar! ⭐';
+                    quizFeedbackEl.classList.remove('text-red-300'); quizFeedbackEl.classList.add('text-yellow-300');
+                    playQuizSuccessSound(); 
+                } else {
+                    quizFeedbackEl.textContent = 'Coba lagi! 😊';
+                    quizFeedbackEl.classList.remove('text-yellow-300'); quizFeedbackEl.classList.add('text-red-300');
+                    playFailSound();
+                }
+                setTimeout(() => {
+                    currentQuestionIndex++; loadQuestion();
+                    quizOptionsEl.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                }, 1500);
+            }
+            function showQuizResults() {
+                quizArea.classList.add('hidden'); quizArea.classList.remove('flex');
+                quizResults.classList.remove('hidden'); quizResults.classList.add('flex');
+                quizFinalScoreEl.textContent = `${quizScore} / ${quizQuestions.length}`;
+            }
+
+            // Event Listeners
+            document.getElementById('btn-start').addEventListener('click', async () => {
+                if (!isMusicStarted) {
+                    await Tone.start(); Tone.Transport.start(); musicLoop.start(0);
+                    isMusicStarted = true; loadVoices();
+                    console.log("Audio context dimulai");
+                }
+                showScreen('screen-menu');
+            });
+            document.getElementById('btn-settings').addEventListener('click', () => console.log("Tombol Pengaturan diklik"));
+            document.getElementById('btn-menu-learn').addEventListener('click', () => showScreen('screen-learn-select')); 
+            document.getElementById('btn-menu-quiz').addEventListener('click', () => showScreen('screen-quiz'));
+            document.getElementById('btn-menu-kitchen').addEventListener('click', () => showScreen('screen-kitchen'));
+            document.getElementById('btn-menu-collection').addEventListener('click', () => showScreen('screen-collection'));
+            document.getElementById('btn-exit-app').addEventListener('click', () => showScreen('screen-outro'));
+            document.querySelectorAll('.btn-back-to-menu').forEach(button => button.addEventListener('click', () => showScreen('screen-menu')));
+            document.querySelectorAll('.btn-select-veg').forEach(button => {
+                button.addEventListener('click', () => {
+                    selectedVegetable = { emoji: button.dataset.vegEmoji, name: button.dataset.vegName };
+                    resetPlant(); showScreen('screen-learn');
+                });
+            });
+            document.getElementById('btn-plant-again').addEventListener('click', () => showScreen('screen-learn-select'));
+            document.getElementById('btn-quiz-retry').addEventListener('click', startQuiz);
+            document.getElementById('btn-play-again').addEventListener('click', () => showScreen('screen-menu'));
+            document.getElementById('btn-exit-to-intro').addEventListener('click', () => showScreen('screen-intro'));
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('button, a')) {
+                    if (e.target.closest('#btn-start') && !isMusicStarted) return;
+                    if (e.target.closest('.draggable-tool')) return;
+                    if (e.target.closest('.btn-speak-veg')) return;
+                    if (e.target.closest('.btn-speak-kitchen')) return;
+                    playClickSound();
+                }
+            });
+
+            showScreen('screen-intro');
+        });
+    </script>
+</body>
+</html>
